@@ -1,5 +1,4 @@
 import mt
-import numpy as np
 
 from math import acos,asin
 
