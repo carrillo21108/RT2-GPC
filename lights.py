@@ -1,4 +1,5 @@
 import mt
+import numpy as np
 
 from math import acos,asin
 
@@ -10,26 +11,50 @@ def reflectVector(normal,direction):
     
     return reflect
 
-def refractVector(incident,normal,n1,n2):
+def refractVector(normal,incident,n1,n2):
     #Snell's Law
-    refract = np.multiply(np.dot(incident,normal),normal)
-    refract = np.subtract(incident,refract)
-    refract = n1*refract
-    refract = refract/n2
-    refract = refract/np.linalg.norm(refract)
-    return refract
-
-def totalInternalReflection(incident,normal,n1,n2):
-    if n1<n2:
+    c1 = mt.producto_punto(normal,incident)
+    if c1<0:
+        c1=-c1
+    else:
+        normal = mt.deny_array(normal)
         n1,n2=n2,n1
-        
-    Ai = acos(np.dot(incident,normal))
-    Ac = asen(n2/n1)
     
-    return Ai>=Ac
+    n = n1/n2
+    
+    T = mt.subtract_arrays(mt.multiply_scalar_array(n,(mt.add_arrays(incident,mt.multiply_scalar_array(c1,normal)))),mt.multiply_scalar_array((1-n**2*(1-c1**2))**0.5,normal))
+    T = mt.normalizar_vector(T)
+    return T
 
-def fresnel(n1,n2):
-    Kr = ((n1**0.5-n2**0.5)**2/((n1**0.5+n2**0.5)))    
+def totalInternalReflection(normal,incident,n1,n2):
+    
+    c1 = mt.producto_punto(normal,incident)
+    if c1<0:
+        c1=-c1
+    else:
+        n1,n2=n2,n1
+    
+    if n1<n2:
+        return False
+    
+    return acos(c1)>=asin(n2/n1)
+
+def fresnel(normal,incident,n1,n2):
+    c1 = mt.producto_punto(normal,incident)
+    if c1<0:
+        c1=-c1
+    else:
+        n1,n2=n2,n1
+     
+    s2 = (n1*(1-c1**2)**0.5)/n2
+    c2 = (1-s2**2)**0.5
+    
+    F1 = (((n2*c1)-(n1*c2))/((n2*c1)+(n1*c2)))**2
+    F2 = (((n1*c2)-(n2*c1))/((n1*c2)+(n2*c1)))**2
+    
+    Kr = (F1+F2)/2
+    Kt = 1-Kr
+    return Kr,Kt
 
 class Light(object):
     def __init__(self,intensity=1,color=(1,1,1),lightType="None"):
